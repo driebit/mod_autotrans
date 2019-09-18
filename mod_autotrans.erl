@@ -27,7 +27,7 @@
     init/1,
     is_enabled/1,
     observe_rsc_update_done/2,
-    autotrans/3,
+    autotrans_task/3,
     autotrans/2
 ]).
 
@@ -63,19 +63,29 @@ observe_rsc_update_done(#rsc_update_done{ id = Id }, Context) ->
         true ->
             lager:info("autotrans: scheduling automatic translation for ~p", [Id]),
             Version = m_rsc:p_no_acl(Id, version, Context),
-            TaskId = <<"autotrans-", (z_convert:to_binary( Id ))/binary>>,
-            z_pivot_rsc:insert_task(?MODULE, autotrans, TaskId, [Id, Version], Context);
+            z_pivot_rsc:insert_task(?MODULE, autotrans_task, undefined, [Id, Version], Context);
         false ->
             ok
     end.
 
 %% @doc Add automatic translations to the given resource, check the resource version.
-autotrans(Id, Version, Context) ->
+autotrans_task(Id, Version, Context) ->
     case m_rsc:p_no_acl(Id, version, Context) of
         Version ->
-            do_autotrans(Id, Version, Context);
-        _OtherVersion ->
+            case do_autotrans(Id, Version, Context) of
+                ok ->
+                    ok;
+                {error, retry} ->
+                    lager:info("autotrans: delaying translation of ~p (version ~p) for 600 seconds",
+                               [Id, Version]),
+                    {delay, 600};
+                {error, _} ->
+                    ok
+            end;
+        OtherVersion ->
             % Ignore, there will be another task for the new version
+            lager:info("autotrans: dropping automatic translation for ~p for version ~p, as version is now ~p",
+                       [Id, Version, OtherVersion]),
             ok
     end.
 
@@ -124,6 +134,7 @@ do_autotrans1(Id, Version, Context) ->
             PropsList = maps:to_list(Props2),
             case trans_props(PropsList, SourceLang, DestLang, Context) of
                 {ok, []} ->
+                    lager:info("autotrans: page ~p didn't need new translations for ~p", [Id, DestLang]),
                     ok;
                 {ok, TransProps} ->
                     lager:info("autotrans: page ~p adding automatic translation to ~p", [Id, DestLang]),

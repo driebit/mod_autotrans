@@ -7,7 +7,7 @@ texts in a source language to a destination language.
 It uses:
 
  * Microsoft Cognitive Text Translation Services [1]
- * Google Translator (TBD)
+ * Google Cloud Translate API [2]
 
 How does it work?
 -----------------
@@ -38,11 +38,13 @@ The following keys need to be configured:
 For Microsoft Cognitive Text Translation Services:
 
  * `mod_autotrans.microsoft_api_secret` One of the API keys from the Translation Services.
-   Currently this module uses the generic endpoint, so no endpoint needs to be configured.
+   Currently this module uses the generic endpoint, so no project endpoint needs to be configured.
 
 For Google Translator:
 
- * *TBD*
+ * `mod_autotrans.google_api_secret` The API Key from the Credentials page on your
+   Google Cloud console at https://console.cloud.google.com/ The Key must have access
+   to the Cloud Translation API
 
 Notes
 -----
@@ -58,3 +60,5 @@ References
 ----------
 
  - [1] https://docs.microsoft.com/en-us/azure/cognitive-services/translator/reference/v3-0-translate
+ - [2] https://cloud.google.com/translate/docs/quickstarts
+
