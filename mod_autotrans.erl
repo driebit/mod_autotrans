@@ -21,6 +21,7 @@
 -mod_title("Automatic translations").
 -mod_description("Automatically add translations to resources").
 -mod_author("Driebit").
+-mod_depends([ mod_admin, mod_translation, mod_mqtt ]).
 
 -export([
     init/1,
