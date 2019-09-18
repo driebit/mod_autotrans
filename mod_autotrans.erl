@@ -31,6 +31,13 @@
     autotrans/2
 ]).
 
+% For testing
+-export([
+    find_properties/2,
+    trans_props/4,
+    update_block_properties/2
+]).
+
 -include_lib("zotonic.hrl").
 
 init(_Context) ->
@@ -128,7 +135,7 @@ do_autotrans1(Id, Version, Context) ->
                     UpdateProps = [
                         {language, Language1},
                         {autotrans_hashes, update_hashes(TransProps, SourceLang, Hashes)}
-                        | TransProps
+                        | update_block_properties(TransProps, Raw)
                     ],
                     UpdateOptions = [
                         no_touch,
@@ -150,9 +157,21 @@ do_autotrans1(Id, Version, Context) ->
     end.
 
 publish_changes(Id, DestLang, TransProps, Context) ->
+    Blocks = case m_rsc:p(Id, blocks, Context) of
+        undefined -> [];
+        Bs -> Bs
+    end,
     Props = lists:map(
         fun
-            ({K, _}) ->
+            ({{block, Name, K}, _}) ->
+                case find_block(Name, Blocks) of
+                    undefined -> [];
+                    B ->
+                        V = proplists:get_value(K, B),
+                        KB = z_convert:to_binary(K),
+                        {<<"blocks$", Name/binary, "$", KB/binary>>, z_trans:lookup_fallback(V, DestLang, Context)}
+                end;
+            ({K, _}) when is_atom(K) ->
                 V = m_rsc:p(Id, K, Context),
                 {K, z_trans:lookup_fallback(V, DestLang, Context)};
             (_) ->
@@ -168,6 +187,51 @@ publish_changes(Id, DestLang, TransProps, Context) ->
         Msg,
         z_acl:sudo(Context)).
 
+update_block_properties(TransProps, Raw) ->
+    Blocks = case proplists:get_value(blocks, Raw, []) of
+        Bs when is_list(Bs) -> Bs;
+        _ -> []
+    end,
+    lists:foldl(
+        fun
+            ({{block, Name, K}, V}, Acc) ->
+                AccBlocks = proplists:get_value(blocks, Acc, Blocks),
+                AccBlocks1 = case find_block(Name, AccBlocks) of
+                    undefined ->
+                        AccBlocks;
+                    B ->
+                        B1 = [ {K, V} | proplists:delete(K, B) ],
+                        replace_block(Name, B1, AccBlocks)
+                end,
+                [ {blocks, AccBlocks1} | proplists:delete(blocks, Acc) ];
+            (KV, Acc) ->
+                [ KV | Acc ]
+        end,
+        [],
+        TransProps).
+
+find_block(_Name, []) ->
+    undefined;
+find_block(Name, [ B | Blocks ]) when is_list(B) ->
+    case proplists:get_value(name, B) of
+        Name -> B;
+        _ -> find_block(Name, Blocks)
+    end;
+find_block(Name, [ _ | Blocks ]) ->
+    find_block(Name, Blocks).
+
+replace_block(Name, Block, Blocks) ->
+    lists:map(
+        fun
+            (B) when is_list(B) ->
+                case proplists:get_value(name, B) of
+                    Name -> Block;
+                    _ -> B
+                end;
+            (B) ->
+                B
+        end,
+        Blocks).
 
 update_hashes(TransProps, SourceLang, Hashes) ->
     lists:foldl(
@@ -181,12 +245,34 @@ update_hashes(TransProps, SourceLang, Hashes) ->
 %% Find all translatable properties
 find_properties([], Acc) ->
     Acc;
-find_properties([ {Prop, {trans, _} = Tr} | Props ], Acc) ->
+find_properties([ {Prop, {trans, _} = Tr} | Props ], Acc) when is_atom(Prop) ->
     Acc1 = Acc#{ Prop => Tr },
+    find_properties(Props, Acc1);
+find_properties([ {blocks, Blocks} | Props ], Acc) ->
+    Acc1 = find_block_properties(Blocks, Acc),
     find_properties(Props, Acc1);
 find_properties([ _P | Props ], Acc) ->
     find_properties(Props, Acc).
 
+find_block_properties([], Acc) ->
+    Acc;
+find_block_properties([ Block | Blocks ], Acc) when is_list(Block) ->
+    case proplists:get_value(name, Block) of
+        undefined ->
+            find_block_properties(Blocks, Acc);
+        Name ->
+            BAcc = find_properties(Block, #{}),
+            BAcc1 = maps:fold(
+                fun(K, V, B) ->
+                    B#{ {block, Name, K} => V }
+                end,
+                #{},
+                BAcc),
+            Acc1 = maps:merge(Acc, BAcc1),
+            find_block_properties(Blocks, Acc1)
+    end;
+find_block_properties(_, Acc) ->
+    Acc.
 
 trans_props([], _SourceLang, _DestLang, _Context) ->
     {ok, []};

@@ -8,10 +8,29 @@
         $("#{{ form_id }} input[name='language'][value='"+targetLanguage+"']").prop("checked",true);
         $("#{{ form_id }} .tab-"+targetLanguage).show();
 
+        console.log(translations);
+
         for (var p in translations) {
             if (translations.hasOwnProperty(p)) {
-                var name = p + "$" + targetLanguage;
-                var $elt = $("#{{ form_id }} [name='"+name+"']");
+                var $elt;
+
+                if (p.startsWith("blocks$")) {
+                    var split = p.split("$");
+                    var block_name = split[1];
+                    var block_prop = split[2];
+
+                    var $nameinput = $("#{{ form_id }} input.block-name")
+                        .filter(function() { return $(this).val() == block_name; });
+                    if ($nameinput.length > 0) {
+                        var bid = $nameinput.attr('id').replace(/-name$/, '')
+                                + '-' + block_prop
+                                + '--' + targetLanguage;
+                        $elt = $('#' + bid);
+                    }
+                } else {
+                    var name = p + "$" + targetLanguage;
+                    $elt = $("#{{ form_id }} [name='"+name+"']");
+                }
                 if ($elt.length > 0) {
                     $elt.val(translations[p]);
                     if ($elt.hasClass('z_editor-installed')) {
