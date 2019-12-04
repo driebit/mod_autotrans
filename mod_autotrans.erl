@@ -25,10 +25,12 @@
 
 -export([
     init/1,
+    event/2,
+    autotrans/2,
     is_enabled/1,
-    observe_rsc_update_done/2,
     autotrans_task/3,
-    autotrans/2
+    is_enabled_auto/1,
+    observe_rsc_update_done/2
 ]).
 
 % For testing
@@ -45,25 +47,32 @@ init(_Context) ->
     ok.
 
 is_enabled(Context) ->
-    SourceLang = m_config:get_value(mod_autotrans, source_language, Context),
-    DestLang = m_config:get_value(mod_autotrans, target_language, Context),
+    SourceLang = z_convert:to_bool(m_config:get_value(mod_autotrans, source_language, Context)),
+    DestLang = z_convert:to_bool(m_config:get_value(mod_autotrans, target_language, Context)),
     case {SourceLang, DestLang} of
-        {A, A} -> false;
-        {undefined, _} -> false;
-        {_, undefined} -> false;
-        {<<>>, _} -> false;
-        {_, <<>>} -> false;
-        {"", _} -> false;
-        {_, ""} -> false;
-        _ -> true
+        {true,true} -> true;
+        _ -> false
     end.
 
+is_enabled_auto(Context) ->
+    AutoTrans = z_convert:to_bool(m_config:get_value(mod_autotrans, automatic, false, Context)),
+    case {is_enabled(Context), AutoTrans} of
+        {true, true} -> true;
+        _ -> false
+    end.
+
+autotranslate(Id, Context) ->
+    lager:info("autotrans: scheduling automatic translation for ~p", [Id]),
+    Version = m_rsc:p_no_acl(Id, version, Context),
+    z_pivot_rsc:insert_task(?MODULE, autotrans_task, undefined, [Id, Version], Context).
+
+event({postback, {auto_translate, [{id, Id}]}, _TriggerId, _TargetId}, Context) ->
+    autotranslate(Id, Context).
+
 observe_rsc_update_done(#rsc_update_done{ id = Id }, Context) ->
-    case is_enabled(Context) of
+    case is_enabled_auto(Context) of
         true ->
-            lager:info("autotrans: scheduling automatic translation for ~p", [Id]),
-            Version = m_rsc:p_no_acl(Id, version, Context),
-            z_pivot_rsc:insert_task(?MODULE, autotrans_task, undefined, [Id, Version], Context);
+            autotranslate(Id, Context);
         false ->
             ok
     end.
