@@ -89,7 +89,7 @@ autotrans_task(Id, Version, Context) ->
                     ok;
                 {error, retry} ->
                     z:info("autotrans: delaying translation of ~p (version ~p) for 600 seconds",
-                               [Id, Version]),
+                               [Id, Version], Context),
                     {delay, 600};
                 {error, _} ->
                     ok
@@ -97,7 +97,7 @@ autotrans_task(Id, Version, Context) ->
         OtherVersion ->
             % Ignore, there will be another task for the new version
             z:info("autotrans: dropping automatic translation for ~p for version ~p, as version is now ~p",
-                       [Id, Version, OtherVersion]),
+                       [Id, Version, OtherVersion], Context),
             ok
     end.
 
@@ -146,10 +146,10 @@ do_autotrans1(Id, Version, Context) ->
             PropsList = maps:to_list(Props2),
             case trans_props(PropsList, SourceLang, DestLang, Context) of
                 {ok, []} ->
-                    z:info("autotrans: page ~p didn't need new translations for ~p", [Id, DestLang]),
+                    z:info("autotrans: page ~p didn't need new translations for ~p", [Id, DestLang], Context),
                     ok;
                 {ok, TransProps} ->
-                    z:info("autotrans: page ~p adding automatic translation to ~p", [Id, DestLang]),
+                    z:info("autotrans: page ~p adding automatic translation to ~p", [Id, DestLang], Context),
                     Language = proplists:get_value(language, Raw, [SourceLang]),
                     Language1 = case lists:member(DestLang, Language) of
                         true -> Language;
@@ -326,7 +326,7 @@ trans_props(Props, SourceLang, DestLang, Context) ->
                         end,
                         Zipped)};
                 false ->
-                    z:info("autotrans returned less translatable strings than requested"),
+                    z:info("autotrans returned less translatable strings than requested", Context),
                     {error, notrans}
             end;
         {error, _} = Error ->
