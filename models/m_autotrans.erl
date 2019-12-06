@@ -124,11 +124,11 @@ google_translation_api1(Text, From, To, ApiKey, Context) when is_binary(Text) ->
         {<<"q">>, Text}
     ])),
     Hs = [
-        {"Content-Type", "application/json"},
-        {"Content-Length", z_convert:to_list( size(Body) )},
-        {"Referer", z_convert:to_list( iolist_to_binary( z_context:abs_url("/", Context)))}
+        {<<"Content-Type">>, <<"application/json">>},
+        {<<"Content-Length">>, z_convert:to_binary( size(Body) )},
+        {<<"Referer">>, iolist_to_binary( z_context:abs_url("/", Context))}
     ],
-    case hackney:request(post, z_convert:to_list(Url), Hs, Body) of
+    case hackney:request(post, Url, Hs, Body) of
         {ok, StatusCode, _RespHeaders, ClientRef} ->
             {ok, RespBody} = hackney:body(ClientRef),
             case StatusCode of
@@ -172,11 +172,11 @@ microsoft_translation_services1(Text, From, To, ApiKey) ->
         ]),
     Body = iolist_to_binary( mochijson2:encode([ {struct, [ {<<"Text">>, Text} ]} ]) ),
     Hs = [
-        {"Content-Type", "application/json"},
-        {"Content-Length", z_convert:to_list( size(Body) )},
-        {"Ocp-Apim-Subscription-Key", z_convert:to_list(ApiKey)}
+        {<<"Content-Type">>, <<"application/json">>},
+        {<<"Content-Length">>, z_convert:to_binary( size(Body) )},
+        {<<"Ocp-Apim-Subscription-Key">>, z_convert:to_binary(ApiKey)}
     ],
-    case hackney:request(post, z_convert:to_list(Url), Hs, Body, []) of
+    case hackney:request(post, Url, Hs, Body, []) of
         {ok, StatusCode, _RespHeaders, ClientRef} ->
             {ok, RespBody} = hackney:body(ClientRef),
             case StatusCode of
