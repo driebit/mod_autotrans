@@ -45,6 +45,7 @@
 
 init(_Context) ->
     _ = application:ensure_all_started(hackney),
+    application:set_env(hackney, use_default_pool, false),
     ok.
 
 is_enabled(Context) ->
