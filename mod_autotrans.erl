@@ -21,14 +21,17 @@
 -mod_title("Automatic translations").
 -mod_description("Automatically add translations to resources").
 -mod_author("Driebit").
+-mod_prio(499).
 -mod_depends([ mod_admin, mod_translation, mod_mqtt ]).
 
 -export([
     init/1,
+    event/2,
+    autotrans/2,
     is_enabled/1,
-    observe_rsc_update_done/2,
     autotrans_task/3,
-    autotrans/2
+    is_enabled_auto/1,
+    observe_rsc_update_done/2
 ]).
 
 % For testing
@@ -46,25 +49,33 @@ init(_Context) ->
     ok.
 
 is_enabled(Context) ->
-    SourceLang = m_config:get_value(mod_autotrans, source_language, Context),
-    DestLang = m_config:get_value(mod_autotrans, target_language, Context),
+    SourceLang = z_convert:to_bool(m_config:get_value(mod_autotrans, source_language, Context)),
+    DestLang = z_convert:to_bool(m_config:get_value(mod_autotrans, target_language, Context)),
     case {SourceLang, DestLang} of
-        {A, A} -> false;
-        {undefined, _} -> false;
-        {_, undefined} -> false;
-        {<<>>, _} -> false;
-        {_, <<>>} -> false;
-        {"", _} -> false;
-        {_, ""} -> false;
-        _ -> true
+        {true,true} -> true;
+        _ -> false
     end.
 
+is_enabled_auto(Context) ->
+    AutoTrans = z_convert:to_bool(m_config:get_value(mod_autotrans, automatic, false, Context)),
+    case {is_enabled(Context), AutoTrans} of
+        {true, true} -> true;
+        _ -> false
+    end.
+
+autotranslate(Id, Context) ->
+    lager:info("autotrans: scheduling automatic translation for ~p", [Id]),
+    Version = m_rsc:p_no_acl(Id, version, Context),
+    z_pivot_rsc:insert_task(?MODULE, autotrans_task, undefined, [Id, Version], Context).
+
+event({postback, {auto_translate, [{id, Id}]}, _TriggerId, _TargetId}, Context) ->
+    autotranslate(Id, Context),
+    Context.
+
 observe_rsc_update_done(#rsc_update_done{ id = Id }, Context) ->
-    case is_enabled(Context) of
+    case is_enabled_auto(Context) of
         true ->
-            lager:info("autotrans: scheduling automatic translation for ~p", [Id]),
-            Version = m_rsc:p_no_acl(Id, version, Context),
-            z_pivot_rsc:insert_task(?MODULE, autotrans_task, undefined, [Id, Version], Context);
+            autotranslate(Id, Context);
         false ->
             ok
     end.
@@ -77,16 +88,24 @@ autotrans_task(Id, Version, Context) ->
                 ok ->
                     ok;
                 {error, retry} ->
-                    lager:info("autotrans: delaying translation of ~p (version ~p) for 600 seconds",
-                               [Id, Version]),
+                    z:info(
+                        "autotrans: delaying translation of ~p (version ~p) for 600 seconds",
+                        [Id, Version],
+                        [{module, ?MODULE}, {line, ?LINE}],
+                        Context
+                    ),
                     {delay, 600};
                 {error, _} ->
                     ok
             end;
         OtherVersion ->
             % Ignore, there will be another task for the new version
-            lager:info("autotrans: dropping automatic translation for ~p for version ~p, as version is now ~p",
-                       [Id, Version, OtherVersion]),
+            z:info(
+                "autotrans: dropping automatic translation for ~p for version ~p, as version is now ~p",
+                [Id, Version, OtherVersion],
+                [{module, ?MODULE}, {line, ?LINE}],
+                Context
+            ),
             ok
     end.
 
@@ -135,10 +154,20 @@ do_autotrans1(Id, Version, Context) ->
             PropsList = maps:to_list(Props2),
             case trans_props(PropsList, SourceLang, DestLang, Context) of
                 {ok, []} ->
-                    lager:info("autotrans: page ~p didn't need new translations for ~p", [Id, DestLang]),
+                    z:info(
+                        "autotrans: page ~p didn't need new translations for ~p",
+                        [Id, DestLang],
+                        [{module, ?MODULE}, {line, ?LINE}],
+                        Context
+                    ),
                     ok;
                 {ok, TransProps} ->
-                    lager:info("autotrans: page ~p adding automatic translation to ~p", [Id, DestLang]),
+                    z:info(
+                        "autotrans: page ~p adding automatic translation to ~p",
+                        [Id, DestLang],
+                        [{module, ?MODULE}, {line, ?LINE}],
+                        Context
+                    ),
                     Language = proplists:get_value(language, Raw, [SourceLang]),
                     Language1 = case lists:member(DestLang, Language) of
                         true -> Language;
@@ -315,11 +344,14 @@ trans_props(Props, SourceLang, DestLang, Context) ->
                         end,
                         Zipped)};
                 false ->
-                    lager:info("autotrans returned less translatable strings than requested"),
+                    z:info(
+                        "autotrans returned less translatable strings than requested",
+                        [],
+                        [{module, ?MODULE}, {line, ?LINE}],
+                        Context
+                    ),
                     {error, notrans}
             end;
         {error, _} = Error ->
             Error
     end.
-
-
