@@ -27,9 +27,9 @@
 -export([
     init/1,
     event/2,
-    autotrans/2,
+    autotrans/3,
     is_enabled/1,
-    autotrans_task/3,
+    autotrans_task/4,
     is_enabled_auto/1,
     observe_rsc_update_done/2
 ]).
@@ -63,28 +63,28 @@ is_enabled_auto(Context) ->
         _ -> false
     end.
 
-autotranslate(Id, Context) ->
+autotranslate(Id, ForceTranslation, Context) ->
     lager:info("autotrans: scheduling automatic translation for ~p", [Id]),
     Version = m_rsc:p_no_acl(Id, version, Context),
-    z_pivot_rsc:insert_task(?MODULE, autotrans_task, undefined, [Id, Version], Context).
+    z_pivot_rsc:insert_task(?MODULE, autotrans_task, undefined, [Id, ForceTranslation, Version], Context).
 
 event({postback, {auto_translate, [{id, Id}]}, _TriggerId, _TargetId}, Context) ->
-    autotranslate(Id, Context),
+    autotranslate(Id, true, Context),
     Context.
 
 observe_rsc_update_done(#rsc_update_done{ id = Id }, Context) ->
     case is_enabled_auto(Context) of
         true ->
-            autotranslate(Id, Context);
+            autotranslate(Id, false, Context);
         false ->
             ok
     end.
 
 %% @doc Add automatic translations to the given resource, check the resource version.
-autotrans_task(Id, Version, Context) ->
+autotrans_task(Id, ForceTranslation, Version, Context) ->
     case m_rsc:p_no_acl(Id, version, Context) of
         Version ->
-            case do_autotrans(Id, Version, Context) of
+            case do_autotrans(Id, ForceTranslation, Version, Context) of
                 ok ->
                     ok;
                 {error, retry} ->
@@ -110,22 +110,22 @@ autotrans_task(Id, Version, Context) ->
     end.
 
 %% @doc Add automatic translations to the given resource.
-autotrans(Id, Context) ->
+autotrans(Id, ForceTranslation, Context) ->
     Version = m_rsc:p_no_acl(Id, version, Context),
-    do_autotrans(Id, Version, Context).
+    do_autotrans(Id, ForceTranslation, Version, Context).
 
 
-do_autotrans(_Id, undefined, _Context) ->
+do_autotrans(_Id, _ForceTranslation, undefined,  _Context) ->
     {error, enoent};
-do_autotrans(Id, Version, Context) ->
+do_autotrans(Id, ForceTranslation, Version, Context) ->
     case is_enabled(Context) of
         true ->
-            do_autotrans1(Id, Version, Context);
+            do_autotrans1(Id, ForceTranslation, Version, Context);
         false ->
             {error, disabled}
     end.
 
-do_autotrans1(Id, Version, Context) ->
+do_autotrans1(Id, ForceTranslation, Version, Context) ->
     case m_rsc:get_raw(Id, Context) of
         Raw when is_list(Raw) ->
             SourceLang = z_convert:to_atom( m_config:get_value(mod_autotrans, source_language, Context) ),
@@ -145,9 +145,15 @@ do_autotrans1(Id, Version, Context) ->
             % Drop unchanged properties
             Props2 = maps:filter(
                 fun(K, {trans, Tr}) ->
-                    T = proplists:get_value(SourceLang, Tr),
-                    Hash = crypto:hash(md5, T),
-                    Hash =/= maps:get(K, Hashes, undefined)
+                    case ForceTranslation of
+                        true ->
+                            % dont filter, translate all fields
+                            true;
+                        _ ->
+                            T = proplists:get_value(SourceLang, Tr),
+                            Hash = crypto:hash(md5, T),
+                            Hash =/= maps:get(K, Hashes, undefined)
+                    end
                 end,
                 Props1),
             % Translate the changed properties
