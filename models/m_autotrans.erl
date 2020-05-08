@@ -54,7 +54,7 @@ first([ {F, Desc} | Fs ], Args, IsRetry, Context) ->
             first(Fs, Args, IsRetry, Context);
         {ok, true} ->
             first(Fs, Args, true, Context);
-        undefined ->
+        _ ->
             case erlang:apply(?MODULE, F, Args ++ [ Context ]) of
                 {ok, _} = OK ->
                     OK;
