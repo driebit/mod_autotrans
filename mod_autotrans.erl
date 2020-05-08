@@ -37,7 +37,7 @@
 % For testing
 -export([
     find_properties/2,
-    trans_props/5,
+    trans_props/4,
     update_block_properties/2
 ]).
 
