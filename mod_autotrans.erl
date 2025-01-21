@@ -43,6 +43,18 @@
 
 -include_lib("zotonic.hrl").
 
+event(#postback{ message = {auto_translate, [{id, Id}]} }, Context) ->
+    autotranslate(Id, true, Context),
+    Context.
+
+observe_rsc_update_done(#rsc_update_done{ id = Id }, Context) ->
+    case is_enabled_auto(Context) of
+        true ->
+            autotranslate(Id, false, Context);
+        false ->
+            ok
+    end.
+
 init(_Context) ->
     _ = application:ensure_all_started(hackney),
     application:set_env(hackney, use_default_pool, false),
@@ -66,17 +78,24 @@ is_enabled_auto(Context) ->
 autotranslate(Id, ForceTranslation, Context) ->
     lager:info("autotrans: scheduling automatic translation for ~p", [Id]),
     Version = m_rsc:p_no_acl(Id, version, Context),
-    z_pivot_rsc:insert_task(?MODULE, autotrans_task, undefined, [Id, ForceTranslation, Version], Context).
+    ensure_jobs_queue(),
+    ContextAsync = z_context:prune_for_async(Context),
+    jobs:run(mod_autotrans_jobs,
+        fun() ->
+            case autotrans_task(Id, ForceTranslation, Version, ContextAsync) of
+                {delay, _} ->
+                    z_pivot_rsc:insert_task(?MODULE, autotrans_task, undefined, [Id, ForceTranslation, Version], Context);
+                ok ->
+                    ok
+            end
+        end).
 
-event({postback, {auto_translate, [{id, Id}]}, _TriggerId, _TargetId}, Context) ->
-    autotranslate(Id, true, Context),
-    Context.
-
-observe_rsc_update_done(#rsc_update_done{ id = Id }, Context) ->
-    case is_enabled_auto(Context) of
-        true ->
-            autotranslate(Id, false, Context);
-        false ->
+ensure_jobs_queue() ->
+    case jobs:queue_info(mod_autotrans_jobs) of
+        undefined ->
+            jobs:add_queue(mod_autotrans_jobs,
+                            [ {regulators, [{counter, [{limit, 1} ]} ]} ]);
+        {queue, _} ->
             ok
     end.
 
