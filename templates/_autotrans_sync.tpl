@@ -40,6 +40,6 @@
             }
         }
 
-        z_growl_add("{_ Automatically updated translations to: _}" + targetLanguage);
+        z_growl_add("{_ Automatically updated translations to: _}<b>" + targetLanguage + "</b>");
     });
 {% endjavascript %}
