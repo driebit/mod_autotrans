@@ -18,12 +18,17 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: ./user/modules/mod_autotrans/templates/_translation_edit_languages.tpl:24 
+#: ./user/modules/mod_autotrans/templates/_translation_edit_languages.tpl:49 
+msgid ""
+"<b>Note:</b> First save the page."
+msgstr ""
+
+#: ./user/modules/mod_autotrans/templates/_translation_edit_languages.tpl:25 
 msgid ""
 "Auto translate the saved texts"
 msgstr ""
 
-#: ./user/modules/mod_autotrans/templates/_translation_edit_languages.tpl:29 
+#: ./user/modules/mod_autotrans/templates/_translation_edit_languages.tpl:30 
 msgid ""
 "Automatic translation"
 msgstr ""
@@ -44,10 +49,10 @@ msgstr ""
 
 #: ./user/modules/mod_autotrans/templates/_translation_edit_languages.tpl:17 
 msgid ""
-"Automatic translation from"
+"Automatic translation of empty texts from"
 msgstr ""
 
-#: ./user/modules/mod_autotrans/templates/_translation_edit_languages.tpl:31 
+#: ./user/modules/mod_autotrans/templates/_translation_edit_languages.tpl:32 
 msgid ""
 "Automatically translate from "
 msgstr ""
@@ -57,22 +62,12 @@ msgid ""
 "Automatically updated translations to:"
 msgstr ""
 
-#: ./user/modules/mod_autotrans/templates/_translation_edit_languages.tpl:48 
-msgid ""
-"First save the page."
-msgstr ""
-
-#: ./user/modules/mod_autotrans/templates/_translation_edit_languages.tpl:48 
-msgid ""
-"Note:"
-msgstr ""
-
-#: ./user/modules/mod_autotrans/templates/_translation_edit_languages.tpl:45 
+#: ./user/modules/mod_autotrans/templates/_translation_edit_languages.tpl:46 
 msgid ""
 "Translate the saved texts of this page from"
 msgstr ""
 
-#: ./user/modules/mod_autotrans/templates/_translation_edit_languages.tpl:39 
+#: ./user/modules/mod_autotrans/templates/_translation_edit_languages.tpl:40 
 msgid ""
 "Wait a bit, you will get a notification when the translation is done."
 msgstr ""
@@ -82,7 +77,7 @@ msgid ""
 "is enabled. Save the page to translate."
 msgstr ""
 
-#: ./user/modules/mod_autotrans/templates/_translation_edit_languages.tpl:19 ./user/modules/mod_autotrans/templates/_translation_edit_languages.tpl:35 ./user/modules/mod_autotrans/templates/_translation_edit_languages.tpl:47 
+#: ./user/modules/mod_autotrans/templates/_translation_edit_languages.tpl:19 ./user/modules/mod_autotrans/templates/_translation_edit_languages.tpl:36 ./user/modules/mod_autotrans/templates/_translation_edit_languages.tpl:48 
 msgid ""
 "to"
 msgstr ""

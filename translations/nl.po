@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"PO-Revision-Date: 2025-01-21 10:11+0100\n"
+"PO-Revision-Date: 2025-01-21 10:19+0100\n"
 "Last-Translator: Marc Worrell <marc@worrell.nl>\n"
 "Language-Team: \n"
 "Language: nl\n"
@@ -20,12 +20,17 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "X-Generator: Poedit 3.5\n"
 
-#: user/modules/mod_autotrans/templates/_translation_edit_languages.tpl:24
+#: user/modules/mod_autotrans/templates/_translation_edit_languages.tpl:49
+#, fuzzy
+msgid "<b>Note:</b> First save the page."
+msgstr "<b>Opmerking:</b> Sla de pagina eerst op."
+
+#: user/modules/mod_autotrans/templates/_translation_edit_languages.tpl:25
 #, fuzzy
 msgid "Auto translate the saved texts"
 msgstr "Automatisch de opgeslagen teksten vertalen"
 
-#: user/modules/mod_autotrans/templates/_translation_edit_languages.tpl:29
+#: user/modules/mod_autotrans/templates/_translation_edit_languages.tpl:30
 #, fuzzy
 msgid "Automatic translation"
 msgstr "Automatische vertaling"
@@ -49,15 +54,15 @@ msgid ""
 "target_language</tt>"
 msgstr ""
 "Automatische vertaling uitgeschakeld. Stel de configuratiewaarden "
-"<tt>mod_autotrans.source_language</tt> en <tt>mod_autotrans."
-"target_language</tt> in om deze in te schakelen"
+"<tt>mod_autotrans.source_language</tt> en <tt>mod_autotrans.target_language</"
+"tt> in om deze in te schakelen"
 
 #: user/modules/mod_autotrans/templates/_translation_edit_languages.tpl:17
 #, fuzzy
-msgid "Automatic translation from"
+msgid "Automatic translation of empty texts from"
 msgstr "Automatische vertaling van"
 
-#: user/modules/mod_autotrans/templates/_translation_edit_languages.tpl:31
+#: user/modules/mod_autotrans/templates/_translation_edit_languages.tpl:32
 #, fuzzy
 msgid "Automatically translate from "
 msgstr "Automatisch vertalen van"
@@ -67,21 +72,12 @@ msgstr "Automatisch vertalen van"
 msgid "Automatically updated translations to:"
 msgstr "Automatisch bijgewerkte vertalingen naar:"
 
-#: user/modules/mod_autotrans/templates/_translation_edit_languages.tpl:48
-#, fuzzy
-msgid "First save the page."
-msgstr "Sla de pagina eerst op."
-
-#: user/modules/mod_autotrans/templates/_translation_edit_languages.tpl:48
-msgid "Note:"
-msgstr "Notitie:"
-
-#: user/modules/mod_autotrans/templates/_translation_edit_languages.tpl:45
+#: user/modules/mod_autotrans/templates/_translation_edit_languages.tpl:46
 #, fuzzy
 msgid "Translate the saved texts of this page from"
 msgstr "Vertaal de opgeslagen teksten van deze pagina vanuit"
 
-#: user/modules/mod_autotrans/templates/_translation_edit_languages.tpl:39
+#: user/modules/mod_autotrans/templates/_translation_edit_languages.tpl:40
 #, fuzzy
 msgid "Wait a bit, you will get a notification when the translation is done."
 msgstr "Wacht even, je krijgt een melding wanneer de vertaling klaar is."
@@ -92,7 +88,10 @@ msgid "is enabled. Save the page to translate."
 msgstr "is ingeschakeld. Sla de te vertalen pagina op."
 
 #: user/modules/mod_autotrans/templates/_translation_edit_languages.tpl:19
-#: user/modules/mod_autotrans/templates/_translation_edit_languages.tpl:35
-#: user/modules/mod_autotrans/templates/_translation_edit_languages.tpl:47
+#: user/modules/mod_autotrans/templates/_translation_edit_languages.tpl:36
+#: user/modules/mod_autotrans/templates/_translation_edit_languages.tpl:48
 msgid "to"
 msgstr "tot"
+
+#~ msgid "Note:"
+#~ msgstr "Notitie:"
