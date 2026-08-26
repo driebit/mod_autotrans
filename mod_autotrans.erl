@@ -1,8 +1,8 @@
 %% @author Marc Worrell <marc@worrell.nl>
-%% @copyright 2019 Driebit BV
+%% @copyright 2026 Driebit BV
 %% @doc Automatic translations for save resources.
 
-%% Copyright 2019 Driebit BV
+%% Copyright 2026 Driebit BV
 %%
 %% Licensed under the Apache License, Version 2.0 (the "License");
 %% you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@
 
 -export([
     init/1,
+    terminate/2,
     event/2,
     autotrans/3,
     is_enabled/1,
@@ -58,6 +59,11 @@ observe_rsc_update_done(#rsc_update_done{ id = Id }, Context) ->
 init(_Context) ->
     _ = application:ensure_all_started(hackney),
     application:set_env(hackney, use_default_pool, false),
+    ensure_jobs_queue(),
+    ok.
+
+terminate(_Reason, _State) ->
+    cleanup_jobs_queue(),
     ok.
 
 is_enabled(Context) ->
@@ -78,7 +84,6 @@ is_enabled_auto(Context) ->
 autotranslate(Id, ForceTranslation, Context) ->
     lager:info("autotrans: scheduling automatic translation for ~p", [Id]),
     Version = m_rsc:p_no_acl(Id, version, Context),
-    ensure_jobs_queue(),
     ContextAsync = z_context:prune_for_async(Context),
     jobs:run(mod_autotrans_jobs,
         fun() ->
@@ -98,6 +103,9 @@ ensure_jobs_queue() ->
         {queue, _} ->
             ok
     end.
+
+cleanup_jobs_queue() ->
+    jobs:delete_queue(mod_autotrans_jobs).
 
 %% @doc Add automatic translations to the given resource, check the resource version.
 autotrans_task(Id, ForceTranslation, Version, Context) ->

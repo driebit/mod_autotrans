@@ -1,8 +1,8 @@
 %% @author Marc Worrell <marc@worrell.nl>
-%% @copyright 2019 Driebit BV
+%% @copyright 2026 Driebit BV
 %% @doc Automatic translations for saved resources.
 
-%% Copyright 2019 Driebit BV
+%% Copyright 2026 Driebit BV
 %%
 %% Licensed under the Apache License, Version 2.0 (the "License");
 %% you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@
 
 -define(GOOGLE_TRANSLATION_ENDPOINT, "https://translation.googleapis.com").
 -define(MICROSOFT_TRANSLATOR_TEXT_ENDPOINT, "https://api.cognitive.microsofttranslator.com").
+-define(TRANSLATION_MAX_RETRIES, 5).
 
 
 -spec translate( binary(), atom(), atom(), z:context() ) -> {ok, binary()} | {error, retry|unavailable}.
@@ -102,13 +103,13 @@ disable(Key, Function, Timeout, Reason, IsRetry, Context) ->
     lager:info("autotrans function ~p is ~s", [ Function, Reason ]),
     z_depcache:set(Key, IsRetry, Timeout, Context).
 
-%% @doc Translate a text with the free Google Translate API (no API key needed)
+%% @doc Translate a text with the Google Translate API
 -spec google_translation_api( binary(), atom(), atom(), z:context() ) -> {ok, binary()} | {error, term()}.
 google_translation_api(Text, From, To, Context) when is_binary(Text) ->
     ApiKey =  m_config:get_value(mod_autotrans, google_api_secret, Context),
     google_translation_api1(Text, From, To, ApiKey, Context).
 
-%% @doc Translate a text with the free Google Translate API (no API key needed)
+%% @doc Translate a text with the Google Translate API
 -spec google_translation_api1( binary(), atom(), atom(), binary(), z:context() ) -> {ok, binary()} | {error, term()}.
 google_translation_api1(_Text, _From, _To, undefined, _Context) -> {error, disabled};
 google_translation_api1(_Text, _From, _To, <<>>, _Context) -> {error, disabled};
