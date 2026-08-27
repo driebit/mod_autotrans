@@ -29,7 +29,6 @@
 
 -define(GOOGLE_TRANSLATION_ENDPOINT, "https://translation.googleapis.com").
 -define(MICROSOFT_TRANSLATOR_TEXT_ENDPOINT, "https://api.cognitive.microsofttranslator.com").
--define(TRANSLATION_MAX_RETRIES, 5).
 
 
 -spec translate( binary(), atom(), atom(), z:context() ) -> {ok, binary()} | {error, retry|unavailable}.
